@@ -1,19 +1,24 @@
 package util;
 
 import model.User;
-import org.hibernate.SessionFactory;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class Util {
-    private static SessionFactory sessionFactory;
+    private static EntityManagerFactory em;
 
-    public static SessionFactory getSessionFactory() {
-        if (sessionFactory == null) {
+    public static EntityManagerFactory getEntityManagerFactory() {
+        if (em == null) {
             try {
                 InputStream config = Util.class
                         .getClassLoader()
@@ -23,29 +28,35 @@ public class Util {
                 }
                 Properties properties = new Properties();
                 properties.load(config);
+
+                properties.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
+                properties.setProperty("hibernate.connection.url", "jdbc:mysql://127.0.0.1:3306/test_schema?useSSL=false&serverTimezone=UTC");
+                properties.setProperty("hibernate.connection.username", "root");
+                properties.setProperty("hibernate.connection.password", "slaveofgod99"); // change password
+                properties.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+                properties.setProperty("hibernate.hbm2ddl.auto", "update");
+                properties.setProperty("hibernate.show_sql", "true");
+                /*Map<String, Object> settings = new HashMap<>();
+                settings.put("javax.persistence.jdbc.driver", properties.getProperty("db.driver"));
+                settings.put("javax.persistence.jdbc.url", properties.getProperty("db.url"));
+                settings.put("javax.persistence.jdbc.user", properties.getProperty("db.user"));
+                settings.put("javax.persistence.jdbc.password", properties.getProperty("db.password"));
+
+                // Hibernate config
+                settings.put("hibernate.dialect", properties.getProperty("db.dialect"));
+                settings.put("hibernate.show_sql", properties.getProperty("db.show_sql"));
+                settings.put("hibernate.hbm2ddl.auto", properties.getProperty("db.hbm2ddl"));*/
+
                 Configuration configuration = new Configuration();
-
-                Properties settings = new Properties();
-                settings.put(Environment.DRIVER, properties.getProperty("db.driver"));
-                settings.put(Environment.URL, properties.getProperty("db.url"));
-                settings.put(Environment.USER, properties.getProperty("db.user"));
-                settings.put(Environment.PASS, properties.getProperty("db.password"));
-                settings.put(Environment.DIALECT, properties.getProperty("db.dialect"));
-                settings.put(Environment.SHOW_SQL, properties.getProperty("db.show_sql"));
-                settings.put(Environment.HBM2DDL_AUTO, properties.getProperty("db.hbm2ddl"));
-
-                // Applies the settings to the hibernate configuration
-                configuration.setProperties(settings);
-                // Registers the annotated User class so hibernate creates the corresponding table and maps fields to columns
+                configuration.setProperties(properties);
                 configuration.addAnnotatedClass(User.class);
 
-                StandardServiceRegistryBuilder registeryBuilder = new StandardServiceRegistryBuilder()
-                        .applySettings(configuration.getProperties());
-                sessionFactory = configuration.buildSessionFactory(registeryBuilder.build());
+                SessionFactory sessionFactory = configuration.buildSessionFactory();
+                em = sessionFactory.unwrap(EntityManagerFactory.class);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return sessionFactory;
+        return em;
     }
 }

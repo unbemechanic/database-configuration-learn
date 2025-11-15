@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
         UserDao userDao = new DaoHibernate();
         userDao.createUsersTable();
-        userDao.saveUser("John", "Wick", (byte) 30);
+        userDao.saveUser("commented_transaction", "Wick", (byte) 90);
 
         for(User user : userDao.getAllUsers()) {
             System.out.println(user);
